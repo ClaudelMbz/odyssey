@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Settings, ClipboardList, PenTool, Activity, ShieldAlert, User, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Settings, ClipboardList, PenTool, Activity, ShieldAlert, User, Menu, X, Hammer } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from './lib/utils';
@@ -11,6 +11,8 @@ import MachineDetail from './pages/MachineDetail';
 import InterventionForm from './pages/InterventionForm';
 import InterventionHistory from './pages/InterventionHistory';
 import InterventionDetail from './pages/InterventionDetail';
+import RepairShop from './pages/RepairShop';
+import PrintForm from './pages/PrintForm';
 
 import { AuthProvider, useAuth } from './components/AuthContainer';
 
@@ -22,6 +24,7 @@ function Sidebar() {
     { title: 'Dashboard', path: '/', icon: LayoutDashboard },
     { title: 'Machines', path: '/machines', icon: Activity },
     { title: 'Interventions', path: '/interventions', icon: ClipboardList },
+    { title: 'Repair Shop', path: '/repair-shop', icon: Hammer },
     { title: 'Maintenance Guides', path: '/guides', icon: PenTool },
   ];
 
@@ -80,6 +83,7 @@ function MobileNav() {
     { title: 'Dashboard', path: '/', icon: LayoutDashboard },
     { title: 'Machines', path: '/machines', icon: Activity },
     { title: 'Interventions', path: '/interventions', icon: ClipboardList },
+    { title: 'Repair Shop', path: '/repair-shop', icon: Hammer },
     { title: 'Guides', path: '/guides', icon: PenTool },
   ];
 
@@ -139,6 +143,8 @@ export default function App() {
               <Route path="/interventions" element={<InterventionHistory />} />
               <Route path="/interventions/:id" element={<InterventionDetail />} />
               <Route path="/interventions/new/:machineId" element={<InterventionForm />} />
+              <Route path="/repair-shop" element={<RepairShop />} />
+              <Route path="/repair-shop/new" element={<PrintForm />} />
               <Route path="*" element={<Dashboard />} />
             </Routes>
           </main>

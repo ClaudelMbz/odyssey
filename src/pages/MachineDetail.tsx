@@ -20,7 +20,8 @@ import {
   Calendar,
   FlameKindling,
   BookOpen,
-  QrCode
+  QrCode,
+  Hammer
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 // ... rest of imports
@@ -181,6 +182,13 @@ export default function MachineDetail() {
               </a>
             </>
           )}
+          <Link 
+            to="/repair-shop" 
+            className="flex items-center gap-2 px-6 py-3 bg-slate-100 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all"
+          >
+            <Hammer size={20} className="text-blue-500" />
+            Repair Shop
+          </Link>
           <button className="p-3 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-slate-900 hover:shadow-md transition-all">
             <Settings size={20} />
           </button>

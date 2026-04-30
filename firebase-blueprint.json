@@ -61,6 +61,22 @@
         "role": { "type": "string", "enum": ["admin", "technician", "manager"] }
       },
       "required": ["uid", "email", "role"]
+    },
+    "PrintJob": {
+      "title": "PrintJob",
+      "description": "A 3D printing task for spare parts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "partName": { "type": "string" },
+        "machineId": { "type": "string" },
+        "material": { "type": "string" },
+        "technicianId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["printing", "completed", "failed"] },
+        "estimatedDuration": { "type": "number" }
+      },
+      "required": ["partName", "machineId", "material", "technicianId", "timestamp", "status"]
     }
   },
   "firestore": {
@@ -71,6 +87,10 @@
     "interventions": {
       "schema": "Intervention",
       "description": "Records of maintenance sessions"
+    },
+    "prints": {
+      "schema": "PrintJob",
+      "description": "History of 3D printing tasks"
     },
     "users": {
       "schema": "User",

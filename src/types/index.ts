@@ -34,6 +34,17 @@ export interface MaintenanceTask {
   category?: string;
 }
 
+export interface PrintJob {
+  id?: string;
+  partName: string;
+  machineId: string;
+  material: string;
+  technicianId: string;
+  timestamp: any;
+  status: 'printing' | 'completed' | 'failed';
+  estimatedDuration: number;
+}
+
 export interface Intervention {
   id: string;
   machineId: string;

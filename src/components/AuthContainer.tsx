@@ -49,8 +49,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    try {
+      setLoading(true);
+      const provider = new GoogleAuthProvider();
+      // Add custom parameters to ensure account selection
+      provider.setCustomParameters({ prompt: 'select_account' });
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      console.error("Sign-in error details:", error);
+      // Check for common cross-origin/domain errors
+      if (error.code === 'auth/unauthorized-domain') {
+        alert("Domain Not Authorized: Please add 'claudelmbz.github.io' to the Authorized Domains list in your Firebase Console (Authentication > Settings).");
+      } else {
+        alert("Authentication failed: " + error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = () => signOut(auth);

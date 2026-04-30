@@ -76,6 +76,17 @@ service cloud.firestore {
              data.partsReplaced is list;
     }
 
+    function isValidPrintJob(data) {
+      return data.keys().hasAll(['partName', 'machineId', 'material', 'technicianId', 'timestamp', 'status', 'estimatedDuration']) &&
+             data.partName is string && data.partName.size() > 0 &&
+             isValidId(data.machineId) &&
+             data.material is string &&
+             data.technicianId == request.auth.uid &&
+             data.timestamp == request.time &&
+             data.status in ['printing', 'completed', 'failed'] &&
+             data.estimatedDuration is number;
+    }
+
     // 1. The Master Gate (Machines)
     match /machines/{machineId} {
       // Allow all signed-in users to view machine telemetry
@@ -104,6 +115,16 @@ service cloud.firestore {
                     
       allow update: if isManager() && isValidIntervention(incoming());
       allow delete: if isAdmin();
+    }
+
+    // Repair Shop: Prints
+    match /prints/{printId} {
+      allow read: if isSignedIn();
+      allow create: if isTechnician() && isValidPrintJob(incoming());
+      allow update: if isTechnician() && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['status'])
+      ) && isValidPrintJob(incoming());
+      allow delete: if isManager();
     }
 
     // 6. PII Isolation (Users)
