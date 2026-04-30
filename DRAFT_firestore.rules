@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && getUserData().role == 'admin';
+    }
+
+    function isManager() {
+      return isSignedIn() && (getUserData().role == 'manager' || isAdmin());
+    }
+
+    function isTechnician() {
+      return isSignedIn() && (getUserData().role == 'technician' || isManager());
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Machines
+    match /machines/{machineId} {
+      allow read: if isSignedIn();
+      allow write: if isManager();
+      
+      function isValidMachine(data) {
+        return data.name is string && data.name.size() > 0 &&
+               data.type in ['shredder', 'extruder', 'press', 'shifter', 'washing_tank', 'centrifuge', 'pyrolysis', 'plate_press', 'compactor'] &&
+               data.status in ['running', 'idle', 'maintenance', 'failure'];
+      }
+    }
+
+    // Interventions
+    match /interventions/{interventionId} {
+      allow read: if isSignedIn();
+      allow create: if isTechnician() && isValidIntervention(request.resource.data);
+      allow update: if isManager() && isValidIntervention(request.resource.data);
+      allow delete: if isAdmin();
+
+      function isValidIntervention(data) {
+        return data.machineId is string &&
+               data.technicianId == request.auth.uid &&
+               data.timestamp == request.time &&
+               data.tasks is list;
+      }
+    }
+
+    // Users
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isManager());
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+  }
+}

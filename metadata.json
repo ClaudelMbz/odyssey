@@ -1,0 +1,6 @@
+{
+  "name": "Plastic Odyssey Maintenance",
+  "description": "Digital maintenance platform for recycling micro-factories, featuring machine monitoring, interactive guides, and offline-sync checklists.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}

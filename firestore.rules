@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 3. Global Safety Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // RBAC: Verify roles from authoritative user document
+    function getUserData(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+
+    function hasUserDoc() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isAdmin() {
+      return isVerified() && (
+        (hasUserDoc() && getUserData(request.auth.uid).role == 'admin') ||
+        request.auth.token.email == 'claudel.mubenzem@2028.icam.fr'
+      );
+    }
+
+    function isManager() {
+      return isVerified() && (
+        (hasUserDoc() && (getUserData(request.auth.uid).role == 'manager' || isAdmin())) ||
+        request.auth.token.email == 'claudel.mubenzem@2028.icam.fr'
+      );
+    }
+
+    function isTechnician() {
+      return isVerified() && hasUserDoc() && (getUserData(request.auth.uid).role == 'technician' || isManager());
+    }
+
+    // 2. Validation Blueprints (Anti-Update-Gap)
+    function isValidMachine(data) {
+      return data.keys().hasAll(['name', 'type', 'status', 'sensors']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.type in ['shredder', 'extruder', 'press', 'centrifuge', 'washing_tank', 'pyrolysis', 'shifter', 'plate_press', 'compactor'] &&
+             data.status in ['running', 'idle', 'maintenance', 'failure'] &&
+             data.sensors.keys().hasAll(['temperature', 'vibration', 'energyConsumption']) &&
+             data.sensors.temperature is number &&
+             data.sensors.vibration is number;
+    }
+
+    function isValidIntervention(data) {
+      return data.keys().hasAll(['machineId', 'technicianId', 'timestamp', 'tasks', 'type', 'durationMinutes', 'partsReplaced']) &&
+             isValidId(data.machineId) &&
+             data.technicianId == request.auth.uid &&
+             data.timestamp == request.time &&
+             data.tasks is list && data.tasks.size() <= 60 &&
+             data.type in ['preventive', 'corrective'] &&
+             data.durationMinutes is number &&
+             data.partsReplaced is list;
+    }
+
+    // 1. The Master Gate (Machines)
+    match /machines/{machineId} {
+      // Allow all signed-in users to view machine telemetry
+      allow read: if isSignedIn();
+      
+      allow create: if isManager() && isValidMachine(incoming());
+      
+      allow update: if isVerified() && (
+        // Action: Sensor Telemetry Update
+        (isTechnician() && incoming().diff(existing()).affectedKeys().hasOnly(['sensors', 'status'])) ||
+        // Action: Full Update
+        isManager()
+      ) && isValidMachine(incoming());
+      
+      allow delete: if isAdmin();
+    }
+
+    // 7. Relational Sync (Interventions)
+    match /interventions/{interventionId} {
+      // Allow all signed-in users to view maintenance history
+      allow read: if isSignedIn();
+      
+      allow create: if isTechnician() && 
+                    isValidIntervention(incoming()) &&
+                    exists(/databases/$(database)/documents/machines/$(incoming().machineId));
+                    
+      allow update: if isManager() && isValidIntervention(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // 6. PII Isolation (Users)
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isManager());
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (
+        (request.auth.uid == userId && incoming().diff(existing()).affectedKeys().hasOnly(['displayName'])) ||
+        isAdmin()
+      );
+    }
+  }
+}

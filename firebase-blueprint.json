@@ -1,0 +1,80 @@
+{
+  "entities": {
+    "Machine": {
+      "title": "Machine",
+      "description": "A recycling machine unit",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["shredder", "extruder", "press", "shifter", "washing_tank", "centrifuge", "pyrolysis", "plate_press", "compactor"] },
+        "status": { "type": "string", "enum": ["running", "idle", "maintenance", "failure"] },
+        "serialNumber": { "type": "string" },
+        "totalHours": { "type": "number" },
+        "lastMaintenance": { "type": "string", "format": "date-time" },
+        "sensors": {
+          "type": "object",
+          "properties": {
+            "temperature": { "type": "number" },
+            "vibration": { "type": "number" },
+            "energyConsumption": { "type": "number" }
+          }
+        }
+      },
+      "required": ["name", "type", "status"]
+    },
+    "Intervention": {
+      "title": "Intervention",
+      "description": "Maintenance record for a machine",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "machineId": { "type": "string" },
+        "technicianId": { "type": "string" },
+        "type": { "type": "string", "enum": ["preventive", "corrective"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "taskId": { "type": "string" },
+              "label": { "type": "string" },
+              "completed": { "type": "boolean" }
+            }
+          }
+        },
+        "notes": { "type": "string" },
+        "partsReplaced": { "type": "array", "items": { "type": "string" } },
+        "durationMinutes": { "type": "number" }
+      },
+      "required": ["machineId", "technicianId", "timestamp"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Application user profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "technician", "manager"] }
+      },
+      "required": ["uid", "email", "role"]
+    }
+  },
+  "firestore": {
+    "machines": {
+      "schema": "Machine",
+      "description": "Main collection for recycling machines"
+    },
+    "interventions": {
+      "schema": "Intervention",
+      "description": "Records of maintenance sessions"
+    },
+    "users": {
+      "schema": "User",
+      "description": "User profile data"
+    }
+  }
+}
